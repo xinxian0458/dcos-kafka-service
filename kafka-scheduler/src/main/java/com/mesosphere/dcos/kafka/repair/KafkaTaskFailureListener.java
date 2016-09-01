@@ -11,9 +11,6 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Arrays;
 
-/**
- * Created by gabriel on 8/8/16.
- */
 public class KafkaTaskFailureListener implements TaskFailureListener {
     private final Log log = LogFactory.getLog(getClass());
     private final StateStore stateStore;

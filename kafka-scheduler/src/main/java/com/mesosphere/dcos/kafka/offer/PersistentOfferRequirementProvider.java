@@ -298,7 +298,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)
           throws InvalidRequirementException, IOException, URISyntaxException {
     log.info("Getting new OfferRequirement for: " + configName);
-    String brokerName = OfferUtils.idToName(brokerId);
+    String brokerName = OfferUtils.brokerIdToTaskName(brokerId);
 
     String containerPath = "kafka-volume-" + UUID.randomUUID();
 
