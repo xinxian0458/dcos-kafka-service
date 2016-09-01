@@ -3,6 +3,7 @@ package com.mesosphere.dcos.kafka.state;
 import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.config.ZookeeperConfiguration;
 import com.mesosphere.dcos.kafka.offer.OfferUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.curator.CuratorStateStore;
 import org.apache.mesos.offer.TaskException;
@@ -13,6 +14,7 @@ import org.apache.mesos.state.StateStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -23,6 +25,8 @@ public class FrameworkState implements TaskStatusProvider {
     private static final Logger log = LoggerFactory.getLogger(FrameworkState.class);
 
     private final StateStore stateStore;
+    private final String SUPPRESSED_KEY = "suppressed";
+
 
     public FrameworkState(ZookeeperConfiguration zkConfig) {
         this.stateStore = new CuratorStateStore(zkConfig.getFrameworkName(), zkConfig.getMesosZkUri());
@@ -135,7 +139,7 @@ public class FrameworkState implements TaskStatusProvider {
      */
     public TaskInfo getTaskInfoForBroker(Integer brokerId) throws Exception {
         try {
-            return stateStore.fetchTask(OfferUtils.idToName(brokerId));
+            return stateStore.fetchTask(OfferUtils.brokerIdToTaskName(brokerId));
         } catch (StateStoreException e) {
             log.warn(String.format(
                     "Failed to get TaskInfo for broker %d. This is expected when the service is "
@@ -149,7 +153,7 @@ public class FrameworkState implements TaskStatusProvider {
      */
     public TaskStatus getTaskStatusForBroker(Integer brokerId) throws Exception {
         try {
-            return stateStore.fetchStatus(OfferUtils.idToName(brokerId));
+            return stateStore.fetchStatus(OfferUtils.brokerIdToTaskName(brokerId));
         } catch (StateStoreException e) {
             log.warn(String.format(
                     "Failed to get TaskStatus for broker %d. This is expected when the service is "
@@ -161,6 +165,35 @@ public class FrameworkState implements TaskStatusProvider {
     public void recordTaskInfo(TaskInfo taskInfo) throws StateStoreException {
         log.info(String.format("Recording updated TaskInfo to state store: %s", taskInfo));
         stateStore.storeTasks(Arrays.asList(taskInfo));
+    }
+
+    public boolean isSuppressed() {
+        byte[] value = stateStore.fetchProperty(SUPPRESSED_KEY);
+        ByteArrayInputStream bis = new ByteArrayInputStream(value);
+        ObjectInput in = null;
+        try {
+            in = new ObjectInputStream(bis);
+            Object obj = in.readObject();
+            return (Boolean) obj;
+        } catch (IOException|ClassNotFoundException e) {
+            log.error(String.format("Failed to read 'suppressed' property from the StateStore"), e);
+            return false;
+        }
+    }
+
+    public void setSuppressed(boolean isSuppressed) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = null;
+        try {
+            oos = new ObjectOutputStream(bos);
+            oos.writeObject(isSuppressed);
+        } catch (IOException e) {
+            log.error(String.format(
+                    "Failed to write suppressed=%b to the StateStore", isSuppressed), e);
+            return;
+        }
+        byte[] value = bos.toByteArray();
+        stateStore.storeProperty(SUPPRESSED_KEY, value);
     }
 
     private void recordTaskStatus(TaskStatus taskStatus) throws StateStoreException {

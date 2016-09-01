@@ -20,6 +20,7 @@ import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.scheduler.plan.api.StageResource;
 import org.apache.mesos.scheduler.recovery.RecoveryResource;
 import org.apache.mesos.state.api.StateResource;
+import org.apache.mesos.state.api.ObjectPropertyDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,8 +115,8 @@ public final class Main extends Application<DropwizardConfiguration> {
     // APIs from dcos-commons:
     environment.jersey().register(new ConfigResource<>(
             configState.getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
-    environment.jersey().register(new StateResource(frameworkState.getStateStore()));
-    environment.jersey().register(new StageResource(kafkaScheduler.getStageManager()));
+    environment.jersey().register(new StateResource(frameworkState.getStateStore(), new ObjectPropertyDeserializer()));
+    environment.jersey().register(new StageResource(kafkaScheduler.getInstallStageManager()));
   }
 
   private void registerHealthChecks(
@@ -124,7 +125,7 @@ public final class Main extends Application<DropwizardConfiguration> {
 
     environment.healthChecks().register(
         BrokerCheck.NAME,
-        new BrokerCheck(kafkaScheduler.getStageManager(), kafkaScheduler.getFrameworkState()));
+        new BrokerCheck(kafkaScheduler.getInstallStageManager(), kafkaScheduler.getFrameworkState()));
     environment.healthChecks().register(
             RegisterCheck.NAME,
             new RegisterCheck(kafkaScheduler));

@@ -25,7 +25,7 @@ public class KafkaUpdateBlock implements Block {
 
   private final KafkaOfferRequirementProvider offerReqProvider;
   private final String targetConfigName;
-  private final FrameworkState state;
+  private final FrameworkState frameworkState;
   private final int brokerId;
   private final UUID blockUuid;
 
@@ -39,14 +39,20 @@ public class KafkaUpdateBlock implements Block {
     String targetConfigName,
     int brokerId) {
 
-    this.state = state;
+    this.frameworkState = state;
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
     this.blockUuid = UUID.randomUUID();
+    this.pendingTaskIds = new ArrayList<>();
 
     TaskInfo taskInfo = fetchTaskInfo();
-    pendingTaskIds = getUpdateIds(taskInfo);
+
+    TaskID taskId = getTaskId(taskInfo);
+    if (taskId != null) {
+      pendingTaskIds.add(taskId);
+    }
+
     initializeStatus(taskInfo);
   }
 
@@ -174,7 +180,7 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public String getName() {
-    return OfferUtils.idToName(getBrokerId());
+    return OfferUtils.brokerIdToTaskName(getBrokerId());
   }
 
   public int getBrokerId() {
@@ -219,7 +225,7 @@ public class KafkaUpdateBlock implements Block {
 
   private TaskStatus fetchTaskStatus() {
     try {
-      return state.getTaskStatusForBroker(getBrokerId());
+      return frameworkState.getTaskStatusForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskStatus for broker %d", getBrokerId()), ex);
       return null;
@@ -228,21 +234,19 @@ public class KafkaUpdateBlock implements Block {
 
   private TaskInfo fetchTaskInfo() {
     try {
-      return state.getTaskInfoForBroker(getBrokerId());
+      return frameworkState.getTaskInfoForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskInfo for broker %d", getBrokerId()), ex);
       return null;
     }
   }
 
-  private static List<TaskID> getUpdateIds(TaskInfo taskInfo) {
-    List<TaskID> taskIds = new ArrayList<>();
-
+  private static TaskID getTaskId(TaskInfo taskInfo) {
     if (taskInfo != null) {
-      taskIds.add(taskInfo.getTaskId());
+      return taskInfo.getTaskId();
+    } else {
+      return null;
     }
-
-    return taskIds;
   }
 
   private static boolean taskIsRunningOrStaging(TaskStatus taskStatus) {

@@ -58,7 +58,7 @@ public class KafkaStageTest {
 
     private Stage getTestStage() {
         List<Phase> phases = Arrays.asList(
-                ReconciliationPhase.create(reconciler, frameworkState),
+                ReconciliationPhase.create(reconciler),
                 new KafkaUpdatePhase(
                         "target-config-name",
                         schedulerConfiguration,
