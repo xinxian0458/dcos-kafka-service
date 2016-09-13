@@ -2,30 +2,29 @@ package com.mesosphere.dcos.kafka.plan;
 
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
+import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 import com.mesosphere.dcos.kafka.offer.OfferUtils;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class KafkaUpdateBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
 
   private final KafkaOfferRequirementProvider offerReqProvider;
   private final String targetConfigName;
-  private final FrameworkState frameworkState;
+  private final KafkaSchedulerState schedulerState;
   private final int brokerId;
   private final UUID blockUuid;
 
@@ -34,12 +33,12 @@ public class KafkaUpdateBlock implements Block {
   private Status status = Status.PENDING;
 
   public KafkaUpdateBlock(
-    FrameworkState state,
+    KafkaSchedulerState state,
     KafkaOfferRequirementProvider offerReqProvider,
     String targetConfigName,
     int brokerId) {
 
-    this.frameworkState = state;
+    this.schedulerState = state;
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
@@ -72,19 +71,19 @@ public class KafkaUpdateBlock implements Block {
   }
 
   @Override
-  public OfferRequirement start() {
+  public Optional<OfferRequirement> start() {
     log.info("Starting block: " + getName() + " with status: " + Block.getStatus(this));
 
     if (!isPending()) {
       log.warn("Block is not pending.  start() should not be called.");
-      return null;
+      return Optional.empty();
     }
 
     TaskStatus taskStatus = fetchTaskStatus();
     if (taskIsRunningOrStaging(taskStatus)) {
       log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus);
       KafkaScheduler.restartTasks(fetchTaskInfo());
-      return null;
+      return Optional.empty();
     }
 
     try {
@@ -97,7 +96,7 @@ public class KafkaUpdateBlock implements Block {
       synchronized (pendingTaskIdsLock) {
         pendingTaskIds = newPendingTasks;
       }
-      return offerReq;
+      return Optional.of(offerReq);
     } catch (Exception e) {
       log.error("Error getting offerRequirement: ", e);
     }
@@ -106,8 +105,8 @@ public class KafkaUpdateBlock implements Block {
   }
 
   @Override
-  public void updateOfferStatus(boolean accepted) {
-    if (accepted) {
+  public void updateOfferStatus(Optional<Collection<Protos.Offer.Operation>> operationsOptional) {
+    if (operationsOptional.isPresent()) {
       setStatus(Status.IN_PROGRESS);
     } else {
       setStatus(Status.PENDING);
@@ -225,7 +224,7 @@ public class KafkaUpdateBlock implements Block {
 
   private TaskStatus fetchTaskStatus() {
     try {
-      return frameworkState.getTaskStatusForBroker(getBrokerId());
+      return schedulerState.getTaskStatusForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskStatus for broker %d", getBrokerId()), ex);
       return null;
@@ -234,7 +233,7 @@ public class KafkaUpdateBlock implements Block {
 
   private TaskInfo fetchTaskInfo() {
     try {
-      return frameworkState.getTaskInfoForBroker(getBrokerId());
+      return schedulerState.getTaskInfoForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskInfo for broker %d", getBrokerId()), ex);
       return null;

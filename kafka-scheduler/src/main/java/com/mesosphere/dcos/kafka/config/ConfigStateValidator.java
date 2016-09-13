@@ -1,9 +1,9 @@
 package com.mesosphere.dcos.kafka.config;
 
+import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
 
 import java.util.*;
 
@@ -54,13 +54,13 @@ public class ConfigStateValidator {
 
   private static final Log log = LogFactory.getLog(ConfigStateValidator.class);
   private static final Set<String> INT_VALUES_THAT_CANNOT_DECREASE = new HashSet<>();
-  private final FrameworkState state;
+  private final KafkaSchedulerState state;
 
   static {
     INT_VALUES_THAT_CANNOT_DECREASE.add("BROKER_COUNT");
   }
 
-  public ConfigStateValidator(FrameworkState state) {
+  public ConfigStateValidator(KafkaSchedulerState state) {
       this.state = state;
   }
 

@@ -90,13 +90,13 @@ public class KafkaSchedulerTest {
         kafkaScheduler = new KafkaScheduler(kafkaSchedulerConfiguration, environment) {
             // Create install StageManager with no operations
             @Override
-            protected StageManager createInstallStageManager(Stage installStage, PhaseStrategyFactory strategyFactory) {
-                StageManager stageManager = super.createInstallStageManager(installStage, strategyFactory);
-                StageManager stageManagerSpy = spy(stageManager);
-                Stage stage = stageManagerSpy.getStage();
-                Stage stageSpy = spy(stage);
+            protected PlanManager createInstallStageManager(Plan installStage, PhaseStrategyFactory strategyFactory) {
+                PlanManager stageManager = super.createInstallStageManager(installStage, strategyFactory);
+                PlanManager stageManagerSpy = spy(stageManager);
+                Plan stage = stageManagerSpy.getPlan();
+                Plan stageSpy = spy(stage);
                 when(stageSpy.isComplete()).thenReturn(true);
-                when(stageManagerSpy.getStage()).thenReturn(stageSpy);
+                when(stageManagerSpy.getPlan()).thenReturn(stageSpy);
                 return stageManagerSpy;
             }
 
@@ -123,9 +123,9 @@ public class KafkaSchedulerTest {
 
     @Test
     public void testRegistered() {
-        Assert.assertNull(kafkaScheduler.getFrameworkState().getFrameworkId());
+        Assert.assertNull(kafkaScheduler.getSchedulerState().getFrameworkId());
         kafkaScheduler.registered(driver, getTestFrameworkId(), null);
-        Assert.assertEquals(getTestFrameworkId(), kafkaScheduler.getFrameworkState().getFrameworkId());
+        Assert.assertEquals(getTestFrameworkId(), kafkaScheduler.getSchedulerState().getFrameworkId());
     }
 
     @Test

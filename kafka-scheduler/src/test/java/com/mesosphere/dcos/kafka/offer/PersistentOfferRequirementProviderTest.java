@@ -5,18 +5,15 @@ import com.mesosphere.dcos.kafka.config.HeapConfig;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.dcos.DcosConstants;
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.offer.TaskUtils;
-import org.apache.mesos.protobuf.CommandInfoBuilder;
-import org.apache.mesos.protobuf.ExecutorInfoBuilder;
-import org.apache.mesos.protobuf.ResourceBuilder;
-import org.apache.mesos.protobuf.TaskInfoBuilder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 public class PersistentOfferRequirementProviderTest {
 
-  @Mock private FrameworkState state;
+  @Mock private KafkaSchedulerState state;
   @Mock private KafkaConfigState configState;
   @Mock private ClusterState clusterState;
   @Mock private Capabilities capabilities;
@@ -175,7 +172,11 @@ public class PersistentOfferRequirementProviderTest {
   @Test
   public void testReplaceOfferRequirement() throws Exception {
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
-    Resource cpu = ResourceBuilder.reservedCpus(0.5, KafkaTestUtils.testRole, KafkaTestUtils.testPrincipal, KafkaTestUtils.testResourceId);
+    Resource cpu = ResourceUtils.getDesiredScalar(
+            KafkaTestUtils.testRole,
+            KafkaTestUtils.testPrincipal,
+            "cpus",
+            0.5);
     TaskInfo inTaskInfo = getTaskInfo(Arrays.asList(cpu));
     OfferRequirement req = provider.getReplacementOfferRequirement(inTaskInfo);
     TaskInfo outTaskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
@@ -185,9 +186,21 @@ public class PersistentOfferRequirementProviderTest {
   @Test
   public void testUpdateRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(schedulerConfig);
-    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, KafkaTestUtils.testRole, KafkaTestUtils.testPrincipal, KafkaTestUtils.testResourceId);
-    Resource oldMem = ResourceBuilder.reservedMem(500, KafkaTestUtils.testRole, KafkaTestUtils.testPrincipal, KafkaTestUtils.testResourceId);
-    Resource oldDisk = ResourceBuilder.reservedDisk(2500, KafkaTestUtils.testRole, KafkaTestUtils.testPrincipal, KafkaTestUtils.testResourceId);
+    Resource oldCpu = ResourceUtils.getDesiredScalar(
+            KafkaTestUtils.testRole,
+            KafkaTestUtils.testPrincipal,
+            "cpus",
+            0.5);
+    Resource oldMem = ResourceUtils.getDesiredScalar(
+            KafkaTestUtils.testRole,
+            KafkaTestUtils.testPrincipal,
+            "mem",
+            500);
+    Resource oldDisk = ResourceUtils.getDesiredScalar(
+            KafkaTestUtils.testRole,
+            KafkaTestUtils.testPrincipal,
+            "disk",
+            2500);
     final HeapConfig oldHeapConfig = new HeapConfig(256);
 
     TaskInfo oldTaskInfo = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk));
@@ -252,19 +265,19 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   private TaskInfo getTaskInfo(List<Resource> resources) {
-    TaskInfoBuilder builder = new TaskInfoBuilder(
-            KafkaTestUtils.testTaskId.getValue(),
-            KafkaTestUtils.testTaskName,
-            KafkaTestUtils.testSlaveId);
+    TaskInfo.Builder builder = TaskInfo.newBuilder()
+            .setTaskId(KafkaTestUtils.testTaskId)
+            .setName(KafkaTestUtils.testTaskName)
+            .setSlaveId(SlaveID.newBuilder().setValue(KafkaTestUtils.testSlaveId));
 
     for (Resource resource : resources) {
-      builder.addResource(resource);
+      builder.addResources(resource);
     }
 
-    final CommandInfo fakeCommand = CommandInfoBuilder.createCmdInfo("/bin/true", Arrays.asList(), Arrays.asList());
+    final CommandInfo fakeCommand = CommandInfo.newBuilder().setValue("/bin/true").build();
     builder.setCommand(fakeCommand);
 
-    builder.setExecutorInfo(ExecutorInfoBuilder.createExecutorInfoBuilder()
+    builder.setExecutor(ExecutorInfo.newBuilder()
             .setName(KafkaTestUtils.testExecutorName)
             .setCommand(fakeCommand)
             .setExecutorId(ExecutorID.newBuilder().setValue(""))

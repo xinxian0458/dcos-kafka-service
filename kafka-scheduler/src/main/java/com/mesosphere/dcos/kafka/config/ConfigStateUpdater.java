@@ -2,7 +2,7 @@ package com.mesosphere.dcos.kafka.config;
 
 import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationException;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
@@ -18,7 +18,7 @@ public class ConfigStateUpdater {
   private final KafkaConfigState kafkaConfigState;
   private final ConfigStateValidator validator;
   private final KafkaSchedulerConfiguration newTargetConfig;
-  private final FrameworkState frameworkState;
+  private final KafkaSchedulerState schedulerState;
   private final KafkaState kafkaState;
 
   public ConfigStateUpdater(KafkaSchedulerConfiguration newTargetConfig) {
@@ -27,9 +27,9 @@ public class ConfigStateUpdater {
     // We must bootstrap ZK settings from the new config:
     ZookeeperConfiguration zkConfig = newTargetConfig.getZookeeperConfig();
     this.kafkaConfigState = new KafkaConfigState(zkConfig);
-    this.frameworkState = new FrameworkState(zkConfig);
+    this.schedulerState = new KafkaSchedulerState(zkConfig);
     this.kafkaState = new KafkaState(zkConfig);
-    this.validator = new ConfigStateValidator(frameworkState);
+    this.validator = new ConfigStateValidator(schedulerState);
   }
 
   /**
@@ -55,8 +55,8 @@ public class ConfigStateUpdater {
       if (!currTargetConfig.equals(newTargetConfig)) {
         log.info("Config change detected!");
         setTargetConfig(newTargetConfig);
-        kafkaConfigState.syncConfigs(frameworkState);
-        kafkaConfigState.cleanConfigs(frameworkState);
+        kafkaConfigState.syncConfigs(schedulerState);
+        kafkaConfigState.cleanConfigs(schedulerState);
       } else {
         log.info("No config property changes detected, leaving brokers as-is.");
       }
@@ -75,8 +75,8 @@ public class ConfigStateUpdater {
   /**
    * Returns the underlying Framework state storage to be used elsewhere.
    */
-  public FrameworkState getFrameworkState() {
-    return frameworkState;
+  public KafkaSchedulerState getSchedulerState() {
+    return schedulerState;
   }
 
   /**

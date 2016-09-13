@@ -3,7 +3,7 @@ package com.mesosphere.dcos.kafka.plan;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.config.ServiceConfiguration;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
 import org.junit.Assert;
@@ -22,49 +22,50 @@ import java.util.List;
 public class KafkaStageTest {
     @Mock KafkaSchedulerConfiguration schedulerConfiguration;
     @Mock ServiceConfiguration serviceConfiguration;
-    @Mock FrameworkState frameworkState;
+    @Mock
+    KafkaSchedulerState schedulerState;
     @Mock PersistentOfferRequirementProvider offerRequirementProvider;
     @Mock Reconciler reconciler;
 
-    private Stage stage;
+    private Plan plan;
 
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
         when(serviceConfiguration.getCount()).thenReturn(3);
         when(schedulerConfiguration.getServiceConfiguration()).thenReturn(serviceConfiguration);
-        stage = getTestStage();
+        plan = getTestPlan();
     }
 
     @Test
     public void testStageConstruction() {
-        Assert.assertEquals(2, stage.getPhases().size());
-        Assert.assertEquals(1, stage.getPhases().get(0).getBlocks().size());
-        Assert.assertEquals(3, stage.getPhases().get(1).getBlocks().size());
+        Assert.assertEquals(2, plan.getPhases().size());
+        Assert.assertEquals(1, plan.getPhases().get(0).getBlocks().size());
+        Assert.assertEquals(3, plan.getPhases().get(1).getBlocks().size());
     }
 
     @Test
     public void testGetCurrentPhase() {
-        StageManager stageManager = new DefaultStageManager(stage, new DefaultStrategyFactory());
+        PlanManager stageManager = new DefaultPlanManager(plan, new DefaultStrategyFactory());
         Assert.assertNotNull(stageManager.getCurrentPhase());
     }
 
     @Test
     public void testHasDecisionPoint() {
-        StageManager stageManager = new DefaultStageManager(stage, new StageStrategyFactory());
-        Block firstBrokerBlock = stageManager.getStage().getPhases().get(1).getBlock(0);
+        PlanManager stageManager = new DefaultPlanManager(plan, new StageStrategyFactory());
+        Block firstBrokerBlock = stageManager.getPlan().getPhases().get(1).getBlock(0);
         Assert.assertTrue(stageManager.hasDecisionPoint(firstBrokerBlock));
     }
 
-    private Stage getTestStage() {
+    private Plan getTestPlan() {
         List<Phase> phases = Arrays.asList(
                 ReconciliationPhase.create(reconciler),
                 new KafkaUpdatePhase(
                         "target-config-name",
                         schedulerConfiguration,
-                        frameworkState,
+                        schedulerState,
                         offerRequirementProvider));
 
-        return DefaultStage.fromList(phases);
+        return DefaultPlan.fromList(phases);
     }
 }
