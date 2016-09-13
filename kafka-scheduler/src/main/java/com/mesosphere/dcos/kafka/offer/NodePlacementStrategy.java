@@ -1,6 +1,6 @@
 package com.mesosphere.dcos.kafka.offer;
 
-import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.SlaveID;
@@ -16,9 +16,9 @@ import java.util.List;
 public class NodePlacementStrategy implements PlacementStrategy {
   private static final Log log = LogFactory.getLog(NodePlacementStrategy.class);
 
-  private final FrameworkState state;
+  private final KafkaSchedulerState state;
 
-  public NodePlacementStrategy(FrameworkState state) {
+  public NodePlacementStrategy(KafkaSchedulerState state) {
     this.state = state;
   }
 
