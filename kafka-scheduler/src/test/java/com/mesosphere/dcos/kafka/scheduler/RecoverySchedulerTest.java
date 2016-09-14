@@ -9,7 +9,7 @@ import com.mesosphere.dcos.kafka.repair.FailureUtils;
 import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
 import com.mesosphere.dcos.kafka.repair.KafkaRecoveryRequirementProvider;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
  */
 public class RecoverySchedulerTest {
     private static final UUID testTargetConfig = UUID.randomUUID();
-    @Mock private KafkaSchedulerState schedulerState;
+    @Mock private FrameworkState schedulerState;
     @Mock private ConfigStore configStore;
     @Mock private KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     @Mock private StateStore stateStore;

@@ -3,7 +3,7 @@ package com.mesosphere.dcos.kafka.plan;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.config.ServiceConfiguration;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
 import org.junit.Assert;
@@ -11,10 +11,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.mockito.Mockito.when;
 
 /**
  * This tests the construction of Kafka Stages.
@@ -22,8 +23,7 @@ import java.util.List;
 public class KafkaStageTest {
     @Mock KafkaSchedulerConfiguration schedulerConfiguration;
     @Mock ServiceConfiguration serviceConfiguration;
-    @Mock
-    KafkaSchedulerState schedulerState;
+    @Mock FrameworkState frameworkState;
     @Mock PersistentOfferRequirementProvider offerRequirementProvider;
     @Mock Reconciler reconciler;
 
@@ -63,7 +63,7 @@ public class KafkaStageTest {
                 new KafkaUpdatePhase(
                         "target-config-name",
                         schedulerConfiguration,
-                        schedulerState,
+                        frameworkState,
                         offerRequirementProvider));
 
         return DefaultPlan.fromList(phases);

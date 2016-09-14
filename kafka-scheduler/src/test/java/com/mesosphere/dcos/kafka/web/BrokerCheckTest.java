@@ -1,7 +1,7 @@
 package com.mesosphere.dcos.kafka.web;
 
 import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.Plan;
@@ -23,9 +23,9 @@ import static org.mockito.Mockito.when;
  * This class tests the BrokerCheck class.
  */
 public class BrokerCheckTest {
-    @Mock private PlanManager stageManager;
+    @Mock private PlanManager planManager;
     @Mock private Plan plan;
-    @Mock private KafkaSchedulerState schedulerState;
+    @Mock private FrameworkState frameworkState;
     @Mock private KafkaUpdatePhase kafkaUpdatePhase;
     @Mock private Block block;
     private BrokerCheck brokerCheck;
@@ -33,7 +33,7 @@ public class BrokerCheckTest {
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        brokerCheck = new BrokerCheck(stageManager, schedulerState);
+        brokerCheck = new BrokerCheck(planManager, frameworkState);
     }
 
     @Test
@@ -48,15 +48,15 @@ public class BrokerCheckTest {
 
     @Test
     public void testCheckNoUpdatePhase() throws Exception {
-        when(stageManager.getPlan()).thenReturn(plan);
+        when(planManager.getPlan()).thenReturn(plan);
         when(plan.getPhases()).thenReturn(Collections.emptyList());
         Assert.assertFalse(brokerCheck.check().isHealthy());
     }
 
     @Test
     public void testCheckBelowBrokerCount() throws Exception {
-        when(stageManager.getPlan()).thenReturn(plan);
-        when(schedulerState.getRunningBrokersCount()).thenReturn(0);
+        when(planManager.getPlan()).thenReturn(plan);
+        when(frameworkState.getRunningBrokersCount()).thenReturn(0);
         when(block.isComplete()).thenReturn(true);
         when(kafkaUpdatePhase.getBlocks()).thenReturn(Arrays.asList(block));
         Mockito.<List<? extends Phase>>when(plan.getPhases()).thenReturn(getMockPhases());
@@ -65,8 +65,8 @@ public class BrokerCheckTest {
 
     @Test
     public void testCheckAtBrokerCount() throws Exception {
-        when(stageManager.getPlan()).thenReturn(plan);
-        when(schedulerState.getRunningBrokersCount()).thenReturn(1);
+        when(planManager.getPlan()).thenReturn(plan);
+        when(frameworkState.getRunningBrokersCount()).thenReturn(1);
         when(block.isComplete()).thenReturn(true);
         when(kafkaUpdatePhase.getBlocks()).thenReturn(Arrays.asList(block));
         Mockito.<List<? extends Phase>>when(plan.getPhases()).thenReturn(getMockPhases());

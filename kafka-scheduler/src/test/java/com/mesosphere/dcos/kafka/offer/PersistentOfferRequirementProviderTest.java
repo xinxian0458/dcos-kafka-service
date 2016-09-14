@@ -5,7 +5,7 @@ import com.mesosphere.dcos.kafka.config.HeapConfig;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos.*;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 public class PersistentOfferRequirementProviderTest {
 
-  @Mock private KafkaSchedulerState state;
+  @Mock private FrameworkState state;
   @Mock private KafkaConfigState configState;
   @Mock private ClusterState clusterState;
   @Mock private Capabilities capabilities;

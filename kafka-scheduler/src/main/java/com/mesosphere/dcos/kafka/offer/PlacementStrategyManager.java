@@ -1,20 +1,20 @@
 package com.mesosphere.dcos.kafka.offer;
 
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.AnyPlacementStrategy;
 import org.apache.mesos.offer.PlacementStrategy;
 
 class PlacementStrategyManager {
   private static final Log log = LogFactory.getLog(PlacementStrategy.class);
 
-  private final KafkaSchedulerState schedulerState;
+  private final FrameworkState frameworkState;
 
-  PlacementStrategyManager(KafkaSchedulerState schedulerState) {
-    this.schedulerState = schedulerState;
+  PlacementStrategyManager(FrameworkState frameworkState) {
+    this.frameworkState = frameworkState;
   }
 
   public PlacementStrategy getPlacementStrategy(KafkaSchedulerConfiguration config) {
@@ -28,7 +28,7 @@ class PlacementStrategyManager {
         return new AnyPlacementStrategy();
       case "NODE":
         log.info("Returning NODE strategy");
-        return new NodePlacementStrategy(schedulerState);
+        return new NodePlacementStrategy(frameworkState);
       default:
         log.info("Returning DEFAULT strategy");
         return new AnyPlacementStrategy();

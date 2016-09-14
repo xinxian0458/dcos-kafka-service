@@ -6,7 +6,7 @@ import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.scheduler.plan.*;
 
 public class BrokerCheck extends HealthCheck {
@@ -14,9 +14,9 @@ public class BrokerCheck extends HealthCheck {
   private final Log log = LogFactory.getLog(BrokerCheck.class);
 
   private final PlanManager planManager;
-  private final KafkaSchedulerState state;
+  private final FrameworkState state;
 
-  public BrokerCheck(PlanManager planManager, KafkaSchedulerState state) {
+  public BrokerCheck(PlanManager planManager, FrameworkState state) {
     this.planManager = planManager;
     this.state = state;
   }
@@ -52,9 +52,9 @@ public class BrokerCheck extends HealthCheck {
   }
 
   private Phase getUpdatePhase() {
-    Plan stage = planManager.getPlan();
+    Plan plan = planManager.getPlan();
 
-    for (Phase phase : stage.getPhases()) {
+    for (Phase phase : plan.getPhases()) {
       if (phase instanceof KafkaUpdatePhase) {
         return phase;
       }

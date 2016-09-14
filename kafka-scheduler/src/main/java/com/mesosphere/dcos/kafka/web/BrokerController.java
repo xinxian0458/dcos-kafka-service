@@ -2,7 +2,7 @@ package com.mesosphere.dcos.kafka.web;
 
 import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
@@ -22,11 +22,11 @@ public class BrokerController {
   private final Log log = LogFactory.getLog(BrokerController.class);
 
   private final KafkaState kafkaState;
-  private final KafkaSchedulerState schedulerState;
+  private final FrameworkState frameworkState;
 
-  public BrokerController(KafkaState kafkaState, KafkaSchedulerState schedulerState) {
+  public BrokerController(KafkaState kafkaState, FrameworkState frameworkState) {
     this.kafkaState = kafkaState;
-    this.schedulerState = schedulerState;
+    this.frameworkState = frameworkState;
   }
 
   @GET
@@ -63,15 +63,15 @@ public class BrokerController {
 
     try {
       int idVal = Integer.parseInt(id);
-      Protos.TaskInfo taskInfo = schedulerState.getTaskInfoForBroker(idVal);
-      if (taskInfo == null) {
+      Optional<Protos.TaskInfo> taskInfoOptional = frameworkState.getTaskInfoForBroker(idVal);
+      if (!taskInfoOptional.isPresent()) {
         // Tests expect an array containing a single null element in this case. May make sense to
         // revisit this strange behavior someday...
         log.error(String.format(
-            "Broker %d doesn't exist in KafkaSchedulerState, returning null entry in response", idVal));
+            "Broker %d doesn't exist in FrameworkState, returning null entry in response", idVal));
         return killResponse(Arrays.asList((String)null));
       }
-      return killBroker(taskInfo, Boolean.parseBoolean(replace));
+      return killBroker(taskInfoOptional.get(), Boolean.parseBoolean(replace));
     } catch (Exception ex) {
       log.error("Failed to kill brokers", ex);
       return Response.serverError().build();
