@@ -1,8 +1,9 @@
 package com.mesosphere.dcos.kafka.plan;
 
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.offer.OfferUtils;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
@@ -10,7 +11,6 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import com.mesosphere.dcos.kafka.offer.OfferUtils;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
@@ -24,7 +24,7 @@ public class KafkaUpdateBlock implements Block {
 
   private final KafkaOfferRequirementProvider offerReqProvider;
   private final String targetConfigName;
-  private final KafkaSchedulerState schedulerState;
+  private final FrameworkState state;
   private final int brokerId;
   private final UUID blockUuid;
 
@@ -33,25 +33,19 @@ public class KafkaUpdateBlock implements Block {
   private Status status = Status.PENDING;
 
   public KafkaUpdateBlock(
-    KafkaSchedulerState state,
+    FrameworkState state,
     KafkaOfferRequirementProvider offerReqProvider,
     String targetConfigName,
     int brokerId) {
 
-    this.schedulerState = state;
+    this.state = state;
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
     this.blockUuid = UUID.randomUUID();
-    this.pendingTaskIds = new ArrayList<>();
 
     TaskInfo taskInfo = fetchTaskInfo();
-
-    TaskID taskId = getTaskId(taskInfo);
-    if (taskId != null) {
-      pendingTaskIds.add(taskId);
-    }
-
+    pendingTaskIds = getUpdateIds(taskInfo);
     initializeStatus(taskInfo);
   }
 
@@ -101,12 +95,12 @@ public class KafkaUpdateBlock implements Block {
       log.error("Error getting offerRequirement: ", e);
     }
 
-    return null;
+    return Optional.empty();
   }
 
   @Override
-  public void updateOfferStatus(Optional<Collection<Protos.Offer.Operation>> operationsOptional) {
-    if (operationsOptional.isPresent()) {
+  public void updateOfferStatus(Optional<Collection<Protos.Offer.Operation>> optionalOperations) {
+    if (optionalOperations.isPresent() && optionalOperations.get().size() > 0) {
       setStatus(Status.IN_PROGRESS);
     } else {
       setStatus(Status.PENDING);
@@ -224,7 +218,7 @@ public class KafkaUpdateBlock implements Block {
 
   private TaskStatus fetchTaskStatus() {
     try {
-      return schedulerState.getTaskStatusForBroker(getBrokerId());
+      return state.getTaskStatusForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskStatus for broker %d", getBrokerId()), ex);
       return null;
@@ -233,19 +227,27 @@ public class KafkaUpdateBlock implements Block {
 
   private TaskInfo fetchTaskInfo() {
     try {
-      return schedulerState.getTaskInfoForBroker(getBrokerId());
+      Optional<TaskInfo> taskInfoOptional = state.getTaskInfoForBroker(getBrokerId());
+      if (taskInfoOptional.isPresent()) {
+        return taskInfoOptional.get();
+      } else {
+        log.warn("TaskInfo not present for broker: " + getBrokerId());
+        return null;
+      }
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskInfo for broker %d", getBrokerId()), ex);
       return null;
     }
   }
 
-  private static TaskID getTaskId(TaskInfo taskInfo) {
+  private static List<TaskID> getUpdateIds(TaskInfo taskInfo) {
+    List<TaskID> taskIds = new ArrayList<>();
+
     if (taskInfo != null) {
-      return taskInfo.getTaskId();
-    } else {
-      return null;
+      taskIds.add(taskInfo.getTaskId());
     }
+
+    return taskIds;
   }
 
   private static boolean taskIsRunningOrStaging(TaskStatus taskStatus) {

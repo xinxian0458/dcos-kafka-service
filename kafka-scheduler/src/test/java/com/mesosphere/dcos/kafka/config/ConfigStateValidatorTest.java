@@ -1,6 +1,6 @@
 package com.mesosphere.dcos.kafka.config;
 
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.junit.Assert;
@@ -17,7 +17,7 @@ import java.util.Collection;
  */
 public class ConfigStateValidatorTest {
     @Mock
-    KafkaSchedulerState schedulerState;
+    FrameworkState frameworkState;
 
     @Before
     public void beforeEach() {
@@ -35,7 +35,7 @@ public class ConfigStateValidatorTest {
                 KafkaTestUtils.testMesosZkUri,
                 null);
 
-        ConfigStateValidator configStateValidator = new ConfigStateValidator(schedulerState);
+        ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
         Collection<ConfigStateValidator.ValidationError> errors = configStateValidator.validateKafkaConfigChange(oldKafkaConfiguration, newKafkaConfiguration);
         Assert.assertEquals(1, errors.size());
     }
@@ -45,7 +45,7 @@ public class ConfigStateValidatorTest {
         KafkaConfiguration oldKafkaConfiguration = ConfigTestUtils.getTestKafkaConfiguration();
         KafkaConfiguration newKafkaConfiguration = oldKafkaConfiguration;
 
-        ConfigStateValidator configStateValidator = new ConfigStateValidator(schedulerState);
+        ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
         Collection<ConfigStateValidator.ValidationError> errors = configStateValidator.validateKafkaConfigChange(oldKafkaConfiguration, newKafkaConfiguration);
         Assert.assertEquals(0, errors.size());
     }
@@ -62,7 +62,7 @@ public class ConfigStateValidatorTest {
                 KafkaTestUtils.testRole,
                 KafkaTestUtils.testPrincipal);
 
-        ConfigStateValidator configStateValidator = new ConfigStateValidator(schedulerState);
+        ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
         Collection<ConfigStateValidator.ValidationError> errors = configStateValidator.validateServiceConfigChange(oldServiceConfiguration, newServiceConfiguration);
         Assert.assertEquals(1, errors.size());
     }
@@ -72,7 +72,7 @@ public class ConfigStateValidatorTest {
         ServiceConfiguration oldServiceConfiguration = ConfigTestUtils.getTestServiceConfiguration();
         ServiceConfiguration newServiceConfiguration = oldServiceConfiguration;
 
-        ConfigStateValidator configStateValidator = new ConfigStateValidator(schedulerState);
+        ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
         Collection<ConfigStateValidator.ValidationError> errors = configStateValidator.validateServiceConfigChange(oldServiceConfiguration, newServiceConfiguration);
         Assert.assertEquals(0, errors.size());
     }

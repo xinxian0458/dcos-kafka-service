@@ -6,7 +6,7 @@ import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.commons.KafkaTask;
 import com.mesosphere.dcos.kafka.config.*;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.*;
@@ -32,12 +32,12 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   public static final String CONFIG_TARGET_KEY = "config_target";
 
   private final KafkaConfigState configState;
-  private final KafkaSchedulerState schedulerState;
+  private final FrameworkState schedulerState;
   private final ClusterState clusterState;
   private final PlacementStrategyManager placementStrategyManager;
 
   public PersistentOfferRequirementProvider(
-      KafkaSchedulerState schedulerState,
+      FrameworkState schedulerState,
       KafkaConfigState configState,
       ClusterState clusterState) {
     this.configState = configState;

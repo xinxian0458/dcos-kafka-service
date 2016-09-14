@@ -1,7 +1,6 @@
 package com.mesosphere.dcos.kafka.config;
 
 import com.mesosphere.dcos.kafka.offer.OfferUtils;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.curator.RetryPolicy;
@@ -11,6 +10,7 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.config.ConfigStore;
 import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.curator.CuratorConfigStore;
 
 import java.util.*;
@@ -131,7 +131,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void syncConfigs(KafkaSchedulerState state) throws ConfigStoreException {
+  public void syncConfigs(FrameworkState state) throws ConfigStoreException {
     try {
       UUID targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
@@ -146,7 +146,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void cleanConfigs(KafkaSchedulerState state) throws ConfigStoreException {
+  public void cleanConfigs(FrameworkState state) throws ConfigStoreException {
     Set<UUID> activeConfigs = new HashSet<>();
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
@@ -165,7 +165,7 @@ public class KafkaConfigState {
     }
   }
 
-  private Set<UUID> getTaskConfigs(KafkaSchedulerState state) {
+  private Set<UUID> getTaskConfigs(FrameworkState state) {
     Set<UUID> activeConfigs = new HashSet<>();
 
     try {
@@ -184,18 +184,18 @@ public class KafkaConfigState {
     return activeConfigs;
   }
 
-  private void replaceDuplicateConfig(KafkaSchedulerState state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName)
+  private void replaceDuplicateConfig(FrameworkState state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName)
           throws ConfigStoreException {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);
 
       for (String duplicateConfig : duplicateConfigs) {
         if (taskConfig.equals(duplicateConfig)) {
-          Label label = Label.newBuilder()
-                  .setKey(PersistentOfferRequirementProvider.CONFIG_TARGET_KEY)
-                  .setValue(targetName.toString())
+          Labels labels = Labels.newBuilder()
+                  .addLabels(Label.newBuilder()
+                          .setKey(PersistentOfferRequirementProvider.CONFIG_TARGET_KEY)
+                          .setValue(targetName.toString()))
                   .build();
-          Labels labels = Labels.newBuilder().addLabels(label).build();
 
           TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();
           state.recordTaskInfo(newTaskInfo);

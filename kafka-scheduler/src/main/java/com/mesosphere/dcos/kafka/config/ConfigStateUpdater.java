@@ -2,7 +2,7 @@ package com.mesosphere.dcos.kafka.config;
 
 import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationException;
-import com.mesosphere.dcos.kafka.state.KafkaSchedulerState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
@@ -18,7 +18,7 @@ public class ConfigStateUpdater {
   private final KafkaConfigState kafkaConfigState;
   private final ConfigStateValidator validator;
   private final KafkaSchedulerConfiguration newTargetConfig;
-  private final KafkaSchedulerState schedulerState;
+  private final FrameworkState frameworkState;
   private final KafkaState kafkaState;
 
   public ConfigStateUpdater(KafkaSchedulerConfiguration newTargetConfig) {
@@ -27,15 +27,15 @@ public class ConfigStateUpdater {
     // We must bootstrap ZK settings from the new config:
     ZookeeperConfiguration zkConfig = newTargetConfig.getZookeeperConfig();
     this.kafkaConfigState = new KafkaConfigState(zkConfig);
-    this.schedulerState = new KafkaSchedulerState(zkConfig);
+    this.frameworkState = new FrameworkState(zkConfig);
     this.kafkaState = new KafkaState(zkConfig);
-    this.validator = new ConfigStateValidator(schedulerState);
+    this.validator = new ConfigStateValidator(frameworkState);
   }
 
   /**
    * Validates, stores, and returns the current target config based off the scheduler system environment.
    *
-   * @throws StateStoreException if the new config fails to be written to persistent storage
+   * @throws ConfigStoreException if the new config fails to be written to persistent storage
    * @throws ValidationException if the new config is invalid or has invalid changes compared to the active config
    */
   public KafkaSchedulerConfiguration getTargetConfig() throws ConfigStoreException, ValidationException {
@@ -55,8 +55,8 @@ public class ConfigStateUpdater {
       if (!currTargetConfig.equals(newTargetConfig)) {
         log.info("Config change detected!");
         setTargetConfig(newTargetConfig);
-        kafkaConfigState.syncConfigs(schedulerState);
-        kafkaConfigState.cleanConfigs(schedulerState);
+        kafkaConfigState.syncConfigs(frameworkState);
+        kafkaConfigState.cleanConfigs(frameworkState);
       } else {
         log.info("No config property changes detected, leaving brokers as-is.");
       }
@@ -75,8 +75,8 @@ public class ConfigStateUpdater {
   /**
    * Returns the underlying Framework state storage to be used elsewhere.
    */
-  public KafkaSchedulerState getSchedulerState() {
-    return schedulerState;
+  public FrameworkState getFrameworkState() {
+    return frameworkState;
   }
 
   /**
