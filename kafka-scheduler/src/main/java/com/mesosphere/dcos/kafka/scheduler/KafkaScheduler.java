@@ -39,7 +39,6 @@ import org.apache.mesos.scheduler.recovery.RecoveryRequirementProvider;
 import org.apache.mesos.scheduler.recovery.RecoveryStatus;
 import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
 import org.apache.mesos.scheduler.recovery.constrain.TimedLaunchConstrainer;
-import org.apache.mesos.state.StateStoreUtils;
 
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -206,6 +205,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
     try {
       frameworkState.setFrameworkId(frameworkId);
       isRegistered = true;
+      reviveOffers(driver);
     } catch (Exception e) {
       isRegistered = false;
       log.error(String.format(
@@ -215,20 +215,25 @@ public class KafkaScheduler implements Scheduler, Runnable {
   }
 
   private boolean hasOperations() {
-    return !planManager.getPlan().isComplete() ||
+    boolean hasOperations = !planManager.getPlan().isComplete() ||
             repairScheduler.hasOperations(null);
+
+    log.debug(hasOperations ?
+            "Scheduler has operations to perform." :
+            "Scheduler has no operations to perform.");
+    return hasOperations;
   }
 
   private void reviveOffers(SchedulerDriver driver) {
     log.info("Reviving offers.");
     driver.reviveOffers();
-    StateStoreUtils.setSuppressed(frameworkState.getStateStore(), false);
+    frameworkState.setSuppressed(false);
   }
 
   private void suppressOffers(SchedulerDriver driver) {
     log.info("Suppressing offers.");
     driver.suppressOffers();
-    StateStoreUtils.setSuppressed(frameworkState.getStateStore(), true);
+    frameworkState.setSuppressed(true);
   }
 
   @Override
@@ -426,9 +431,9 @@ public class KafkaScheduler implements Scheduler, Runnable {
       .setPrincipal(envConfig.getServiceConfiguration().getPrincipal())
       .setCheckpoint(true);
 
-    FrameworkID fwkId = frameworkState.getFrameworkId();
-    if (fwkId != null) {
-      fwkInfoBuilder.setId(fwkId);
+    Optional<FrameworkID> fwkId = frameworkState.getFrameworkId();
+    if (fwkId.isPresent()) {
+      fwkInfoBuilder.setId(fwkId.get());
     }
 
     return fwkInfoBuilder.build();

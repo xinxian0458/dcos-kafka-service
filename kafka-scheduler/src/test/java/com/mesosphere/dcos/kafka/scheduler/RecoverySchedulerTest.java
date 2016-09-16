@@ -63,7 +63,7 @@ public class RecoverySchedulerTest {
     @Before
     public void beforeEach() throws ConfigStoreException {
         MockitoAnnotations.initMocks(this);
-        when(schedulerState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
+        when(schedulerState.getFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName)))
             .thenReturn(ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         when(serviceConfiguration.getCount()).thenReturn(3);

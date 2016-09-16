@@ -361,7 +361,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     executorBuilder
       .setName(brokerName)
       .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
-      .setFrameworkId(schedulerState.getFrameworkId())
+      .setFrameworkId(schedulerState.getFrameworkId().get())
       .setCommand(executorCommandBuilder)
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))

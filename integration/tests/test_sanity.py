@@ -244,6 +244,7 @@ def test_single_broker_restart_succeeds():
 
     get_broker_list()
 
+@pytest.mark.sanity
 def test_is_suppressed():
     dcos_url = dcos.config.get_config_val('core.dcos_url')
     suppressed_url = urllib.parse.urljoin(dcos_url, 'service/kafka/v1/state/properties/suppressed')

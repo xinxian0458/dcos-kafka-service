@@ -51,7 +51,7 @@ public class PersistentOfferRequirementProviderTest {
   @Test
   public void testNewRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(schedulerConfig);
-    when(state.getFrameworkId()).thenReturn(FrameworkID.newBuilder().setValue("abcd").build());
+    when(state.getFrameworkId()).thenReturn(Optional.of(FrameworkID.newBuilder().setValue("abcd").build()));
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
     OfferRequirement req = provider.getNewOfferRequirement(KafkaTestUtils.testConfigName, 0);
 

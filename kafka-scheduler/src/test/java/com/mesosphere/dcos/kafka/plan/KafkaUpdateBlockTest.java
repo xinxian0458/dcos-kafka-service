@@ -42,7 +42,7 @@ public class KafkaUpdateBlockTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
+        when(frameworkState.getFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(
                 ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         when(capabilities.supportsNamedVips()).thenReturn(true);
