@@ -9,6 +9,7 @@ import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.state.StateStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,6 +21,8 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -36,13 +39,16 @@ public class KafkaUpdateBlockTest {
     private static final Protos.Offer.Operation operation = Protos.Offer.Operation.newBuilder()
             .setType(Protos.Offer.Operation.Type.LAUNCH)
             .build();
-    private static final Optional<Collection<Protos.Offer.Operation>> nonEmptyOperations =
-            Optional.of(Arrays.asList(operation));
+    private static final Collection<Protos.Offer.Operation> nonEmptyOperations =
+            Arrays.asList(operation);
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(frameworkState.getFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+        StateStore stateStore = mock(StateStore.class);
+        when(stateStore.fetchFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+        when(frameworkState.getStateStore()).thenReturn(stateStore);
+        when(frameworkState.getTaskStatusForBroker(any())).thenReturn(Optional.empty());
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(
                 ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         when(capabilities.supportsNamedVips()).thenReturn(true);

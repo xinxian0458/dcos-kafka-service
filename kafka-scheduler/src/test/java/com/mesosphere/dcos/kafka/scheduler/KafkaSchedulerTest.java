@@ -76,7 +76,7 @@ public class KafkaSchedulerTest {
     }
 
     @Test
-
+    public void testResourceOffersEmpty() {
         kafkaScheduler.resourceOffers(driver, Collections.emptyList());
         verify(driver, times(1)).reconcileTasks(anyObject());
     }
@@ -146,9 +146,11 @@ public class KafkaSchedulerTest {
 
     @Test
     public void testRegistered() {
-        Assert.assertTrue(!kafkaScheduler.getFrameworkState().getFrameworkId().isPresent());
+        Assert.assertTrue(!kafkaScheduler.getFrameworkState().getStateStore().fetchFrameworkId().isPresent());
         kafkaScheduler.registered(driver, getTestFrameworkId(), null);
-        Assert.assertEquals(getTestFrameworkId(), kafkaScheduler.getFrameworkState().getFrameworkId().get());
+        Assert.assertEquals(
+                getTestFrameworkId(),
+                kafkaScheduler.getFrameworkState().getStateStore().fetchFrameworkId().get());
     }
 
     @Test

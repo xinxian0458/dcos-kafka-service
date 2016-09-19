@@ -121,14 +121,14 @@ public class FrameworkState extends SchedulerState implements TaskStatusProvider
     /**
      * Returns the TaskStatus for the provided Broker index, or {@code null} if none is found.
      */
-    public TaskStatus getTaskStatusForBroker(Integer brokerId) throws Exception {
+    public Optional<TaskStatus> getTaskStatusForBroker(Integer brokerId) throws Exception {
         try {
             return getStateStore().fetchStatus(OfferUtils.brokerIdToTaskName(brokerId));
         } catch (StateStoreException e) {
             log.warn(String.format(
                     "Failed to get TaskStatus for broker %d. This is expected when the service is "
                             + "starting for the first time.", brokerId), e);
-            return null;
+            return Optional.empty();
         }
     }
 

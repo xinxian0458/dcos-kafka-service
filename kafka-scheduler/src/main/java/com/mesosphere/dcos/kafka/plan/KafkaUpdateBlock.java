@@ -73,9 +73,9 @@ public class KafkaUpdateBlock implements Block {
       return Optional.empty();
     }
 
-    TaskStatus taskStatus = fetchTaskStatus();
+    Optional<TaskStatus> taskStatus = fetchTaskStatus();
     if (taskIsRunningOrStaging(taskStatus)) {
-      log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus);
+      log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus.get());
       KafkaScheduler.restartTasks(fetchTaskInfo());
       return Optional.empty();
     }
@@ -99,8 +99,8 @@ public class KafkaUpdateBlock implements Block {
   }
 
   @Override
-  public void updateOfferStatus(Optional<Collection<Protos.Offer.Operation>> optionalOperations) {
-    if (optionalOperations.isPresent() && optionalOperations.get().size() > 0) {
+  public void updateOfferStatus(Collection<Protos.Offer.Operation> optionalOperations) {
+    if (optionalOperations.size() > 0) {
       setStatus(Status.IN_PROGRESS);
     } else {
       setStatus(Status.PENDING);
@@ -216,12 +216,12 @@ public class KafkaUpdateBlock implements Block {
     log.info(getName() + ": changed status from: " + oldStatus + " to: " + newStatus);
   }
 
-  private TaskStatus fetchTaskStatus() {
+  private Optional<TaskStatus> fetchTaskStatus() {
     try {
       return state.getTaskStatusForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskStatus for broker %d", getBrokerId()), ex);
-      return null;
+      return Optional.empty();
     }
   }
 
@@ -250,15 +250,16 @@ public class KafkaUpdateBlock implements Block {
     return taskIds;
   }
 
-  private static boolean taskIsRunningOrStaging(TaskStatus taskStatus) {
-    if (null == taskStatus) {
-      return false;
-    }
-    switch (taskStatus.getState()) {
-    case TASK_RUNNING:
-    case TASK_STAGING:
-      return true;
-    default:
+  private static boolean taskIsRunningOrStaging(Optional<TaskStatus> taskStatus) {
+    if (taskStatus.isPresent()) {
+      switch (taskStatus.get().getState()) {
+        case TASK_RUNNING:
+        case TASK_STAGING:
+          return true;
+        default:
+          return false;
+      }
+    } else {
       return false;
     }
   }

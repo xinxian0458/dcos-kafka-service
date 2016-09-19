@@ -133,7 +133,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
   protected DefaultRecoveryScheduler createRecoveryScheduler(KafkaOfferRequirementProvider offerRequirementProvider) {
     RecoveryConfiguration recoveryConfiguration = envConfig.getRecoveryConfiguration();
     LaunchConstrainer constrainer = new TimedLaunchConstrainer(
-            Duration.ofSeconds(recoveryConfiguration.getRepairDelaySecs()));
+            Duration.ofSeconds(recoveryConfiguration.getRecoveryDelaySecs()));
     RecoveryRequirementProvider recoveryRequirementProvider =
             new KafkaRecoveryRequirementProvider(
                     offerRequirementProvider,
@@ -203,7 +203,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     try {
-      frameworkState.setFrameworkId(frameworkId);
+      frameworkState.getStateStore().storeFrameworkId(frameworkId);
       isRegistered = true;
       reviveOffers(driver);
     } catch (Exception e) {
@@ -431,7 +431,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
       .setPrincipal(envConfig.getServiceConfiguration().getPrincipal())
       .setCheckpoint(true);
 
-    Optional<FrameworkID> fwkId = frameworkState.getFrameworkId();
+    Optional<FrameworkID> fwkId = frameworkState.getStateStore().fetchFrameworkId();
     if (fwkId.isPresent()) {
       fwkInfoBuilder.setId(fwkId.get());
     }

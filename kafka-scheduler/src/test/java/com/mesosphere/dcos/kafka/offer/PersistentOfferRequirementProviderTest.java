@@ -14,6 +14,7 @@ import org.apache.mesos.dcos.DcosConstants;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.offer.TaskUtils;
+import org.apache.mesos.state.StateStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PersistentOfferRequirementProviderTest {
@@ -37,6 +39,9 @@ public class PersistentOfferRequirementProviderTest {
   @Before
   public void beforeEach() throws IOException, URISyntaxException {
     MockitoAnnotations.initMocks(this);
+    StateStore stateStore = mock(StateStore.class);
+    when(stateStore.fetchFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+    when(state.getStateStore()).thenReturn(stateStore);
     when(capabilities.supportsNamedVips()).thenReturn(true);
     when(clusterState.getCapabilities()).thenReturn(capabilities);
     schedulerConfig = ConfigTestUtils.getTestKafkaSchedulerConfiguration();
@@ -44,15 +49,22 @@ public class PersistentOfferRequirementProviderTest {
 
   @Test
   public void testConstructor() {
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
+    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(
+            state,
+            configState,
+            clusterState);
     Assert.assertNotNull(provider);
   }
 
   @Test
   public void testNewRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(schedulerConfig);
-    when(state.getFrameworkId()).thenReturn(Optional.of(FrameworkID.newBuilder().setValue("abcd").build()));
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
+    when(state.getStateStore().fetchFrameworkId()).thenReturn(
+            Optional.of(FrameworkID.newBuilder().setValue("abcd").build()));
+    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(
+            state,
+            configState,
+            clusterState);
     OfferRequirement req = provider.getNewOfferRequirement(KafkaTestUtils.testConfigName, 0);
 
     TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();

@@ -15,7 +15,6 @@ import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.config.ConfigStore;
-import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.RecoveryConfiguration;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferAccepter;
@@ -30,10 +29,7 @@ import org.apache.mesos.state.StateStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -61,9 +57,11 @@ public class RecoverySchedulerTest {
     @Captor private ArgumentCaptor<Collection<Protos.Offer.Operation>> operationCaptor;
 
     @Before
-    public void beforeEach() throws ConfigStoreException {
+    public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(schedulerState.getFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+        StateStore stateStore = mock(StateStore.class);
+        when(stateStore.fetchFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+        when(schedulerState.getStateStore()).thenReturn(stateStore);
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName)))
             .thenReturn(ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         when(serviceConfiguration.getCount()).thenReturn(3);
