@@ -19,6 +19,7 @@ import org.apache.mesos.config.api.ConfigResource;
 import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.scheduler.plan.api.PlanResource;
 import org.apache.mesos.scheduler.recovery.api.RecoveryResource;
+import org.apache.mesos.state.api.JsonPropertyDeserializer;
 import org.apache.mesos.state.api.StateResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,7 +115,7 @@ public final class Main extends Application<DropwizardConfiguration> {
     // APIs from dcos-commons:
     environment.jersey().register(new ConfigResource<>(
             configState.getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
-    environment.jersey().register(new StateResource(schedulerState.getStateStore()));
+    environment.jersey().register(new StateResource(schedulerState.getStateStore(), new JsonPropertyDeserializer()));
     environment.jersey().register(new PlanResource(kafkaScheduler.getPlanManager()));
   }
 
