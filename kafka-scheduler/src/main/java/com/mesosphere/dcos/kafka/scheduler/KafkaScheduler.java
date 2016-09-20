@@ -216,7 +216,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
   private boolean hasOperations() {
     boolean hasOperations = !planManager.getPlan().isComplete() ||
-            repairScheduler.hasOperations(null);
+            repairScheduler.hasOperations(Optional.empty());
 
     log.debug(hasOperations ?
             "Scheduler has operations to perform." :
