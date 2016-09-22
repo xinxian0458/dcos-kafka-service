@@ -141,7 +141,6 @@ public class RecoverySchedulerTest {
         when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
 
         DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
-        System.out.println("mark");
         List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
                 driver,
                 Arrays.asList(getTestOfferSufficientForNewBroker()),
